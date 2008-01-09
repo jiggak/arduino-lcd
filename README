@@ -1,0 +1,34 @@
+ WHAT IS THIS?
+===============
+
+This is a library for the Arduino for controlling LCD modules based on the
+popular Hitachi HD44780 controller.  The library supports all features of
+the controller and can operate in either 4pin or 8pin mode without modifying
+any source code.
+
+
+ WHY, THERE IS ALREADY ANOTHER LIB?
+====================================
+
+Well I thought it would be fun to write, and the other libraries where not
+really fully featured and or a bit messy.  I also wanted to have a single
+library for handing both 4pin and 8pin mode without modifying library files.
+
+
+ HOW TO INSTALL
+================
+
+Make a directory in the arduino libraries directory:
+mkdir ~/arduino/hardware/libraries/Lcd
+
+Copy Lcd.h and Lcd.cpp to it:
+cp Lcd.h Lcd.cpp ~/arduino/hardware/libraries/Lcd
+
+
+ HOW TO USE
+============
+
+Click Sketch->Import Library->Lcd.  This should include the Lcd.h header
+automagically.  You will find some sample sketches that demonstrate how
+to use this library in the package you downloaded.
+
