@@ -22,21 +22,21 @@
 
 #include <inttypes.h>
 
-/* Generate bitmask for 2 pin mask */
-#define _2PINS(p0,p1) \
-   ((p0&0xf) << 4) | (p1&0xf)
+/* Generates control pin mask */
+#define _2PINS(RS,E) \
+   ((RS&0xf) << 4) | (E&0xf)
 
-/* Generate bitmask for 4 pin mask */
-#define _4PINS(p0,p1,p2,p3) \
-   ((p0&0xf) << 12) | ((p1&0xf) << 8) | \
-   ((p2&0xf) << 4)  |  (p3&0xf)
+/* Generates data pin mask for 4 pin mode */
+#define _4PINS(D4,D5,D6,D7) \
+   ((D7&0xf) << 12) | ((D6&0xf) << 8) | \
+   ((D5&0xf) << 4)  |  (D4&0xf)
 
-/* Generate bitmask for 8 pin mask */
-#define _8PINS(p0,p1,p2,p3,p4,p5,p6,p7) \
-   ((((uint32_t)p0)&0xf) << 28) | ((((uint32_t)p1)&0xf) << 24) | \
-   ((((uint32_t)p2)&0xf) << 20) | ((((uint32_t)p3)&0xf) << 16) | \
-   ((((uint32_t)p4)&0xf) << 12) | ((((uint32_t)p5)&0xf) << 8) | \
-   ((((uint32_t)p6)&0xf) << 4)  | (p7&0xf)
+/* Generates data pin mask for 8 pin mode */
+#define _8PINS(D0,D1,D2,D3,D4,D5,D6,D7) \
+   ((((uint32_t)D7)&0xf) << 28) | ((((uint32_t)D6)&0xf) << 24) | \
+   ((((uint32_t)D5)&0xf) << 20) | ((((uint32_t)D4)&0xf) << 16) | \
+   ((((uint32_t)D3)&0xf) << 12) | ((((uint32_t)D2)&0xf) << 8) | \
+   ((((uint32_t)D1)&0xf) << 4)  | (D0&0xf)
 
 // Function constants passed to constructor, can be OR'd together
 #define FUNCTION_4BIT  0x10 // enable 4 pin mode
@@ -116,7 +116,7 @@ protected:
    /* pulses the enable pin to signal the LCD to read data pins */
    void enable();
    
-   inline bool is4bit()
+   inline bool is4bit() const
    { return _function & FUNCTION_4BIT; }
    
 public:
@@ -172,6 +172,8 @@ public:
    
    /**
     * Move the cursor to a given column and row.
+    * \param col
+    * \param row
     */
    void move_to(int col, int row);
 
@@ -182,28 +184,29 @@ public:
    void print(char c);
 
    /**
-    * Prints a string of ASCII characters to the LCD screen at the
+    * Print a string of ASCII characters to the LCD screen at the
     * current cursor position.
     */
    void print(char* str);
    
    /**
-    * Define character in CGRAM.  This defines a custom character.  When the LCD is
-    * setup to use 5x8 font the user can specify up to eight characters.  For 5x10
-    * font four characters can be defined.
+    * Define character in CGRAM.  This defines a custom character.  When the
+    * LCD is setup to use 5x8 font the user can specify up to eight characters.
+    * For 5x11 font four characters can be defined.
     *
-    * Custom characters are defined using an array of 8bit values representing a
-    * bitmap.  For 5x8 font the data array must contain 8 bytes.  For 5x11 font the
-    * array must contain 11 bytes.
+    * Custom characters are bitmaps!  For 5x8 font the bitmap must be 8 bits
+    * wide and 8 bits hight.  For 5x11 font the bitmap must be 8 bits wide and
+    * 10 bits high.
+    * font the array must contain 11 bytes.
     *
-    * Each byte represents a row of bits in a character.  The lower 5 bits of each
-    * byte is used to specify the dots in the character that should be black (1)
-    * and the once that should be white (0).
+    * Each byte in the character data array represents a row of bits in a
+    * character.  The lower 5 bits of each byte is used to specify the dots in
+    * the character that should be black (1) and white (0).
     *
-    * To print the user defined character, pass the index of of the character to the
-    * print method.
+    * To print the user defined character, pass the index of of the character
+    * to the print method.
     *
-    * Example: define bullet type character
+    * Example: define bullet character
     *
     * X X X 0 0 0 0 0
     * X X X 0 0 0 0 0

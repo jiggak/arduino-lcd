@@ -32,3 +32,18 @@ Click Sketch->Import Library->Lcd.  This should include the Lcd.h header
 automagically.  You will find some sample sketches that demonstrate how
 to use this library in the package you downloaded.
 
+
+ WIRING
+========
+
+By default the Lcd class will setup the LCD module in 8 pin mode with the
+following pin assignment:
+
+RS -> 2
+E  -> 3
+D0 -> 4
+...
+D7 -> 11
+
+The RW pin is NOT used and must be connected to group.
+
