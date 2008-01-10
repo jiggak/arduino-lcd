@@ -62,9 +62,9 @@
 
 // CMD_SHIFT parameters, can be OR'd together
 #define SHIFT_SCREEN 0x08 // shift display 
-#define SHIRT_CURSOR 0x00 // shift cursor
-#define SHIRT_RIGHT  0x04 // to the right
-#define SHIRT_LEFT   0x00 // to the left
+#define SHIFT_CURSOR 0x00 // shift cursor
+#define SHIFT_RIGHT  0x04 // to the right
+#define SHIFT_LEFT   0x00 // to the left
 
 /**
  * Class for controlling HD44780 based LCD modules from the Arduino.

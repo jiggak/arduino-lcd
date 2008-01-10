@@ -58,18 +58,25 @@ void draw_bar()
   
   lcd.print((char)1);   // draw right part of bar
   
-  lcd.move_to(2,1);     // return cursor to starting pos
+  lcd.move_to(pos,1);   // return cursor to starting pos
 }
 
 void animate()
 {
-  lcd.print((char)
+  lcd.shift(SHIFT_CURSOR | (dir == 1? SHIFT_LEFT : SHIFT_RIGHT));
+  lcd.print((char)2);
+    
+  lcd.print((char)3);
+
   pos = pos + dir;
 
-  if (pos == LCD_WIDTH-1 && dir == 1)
+  if (pos == LCD_WIDTH-1 && dir == 1) {
     dir = -1;
-  else if (pos == 2 && dir == -1
+    lcd.entry_mode(ENTRY_CURSOR_DEC);
+  } else if (pos == 2 && dir == -1) {
     dir = 1;
+    lcd.entry_mode(ENTRY_CURSOR_INC);
+  }
 }
 
 void setup()
@@ -79,6 +86,7 @@ void setup()
   lcd.set_data_pins(_4PINS(4,5,6,7)); // D4->4, D5->5, D6->6, D7->7
   
   lcd.setup(); // setup arduino and initialize LCD
+  lcd.display(DISPLAY_ON | DISPLAY_NOCURSOR);
   
   // define the custom characters
   lcd.define_char(0, left);
@@ -86,12 +94,12 @@ void setup()
   lcd.define_char(2, middle_empty);
   lcd.define_char(3, middle_full);
   
+  lcd.home();
   draw_bar();
 }
 
 void loop()
 {
   animate();
-  delay(10);
+  delay(200);
 }
-
