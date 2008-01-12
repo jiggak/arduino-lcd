@@ -46,11 +46,13 @@ uint8_t middle_empty[] = { 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00 };
 // x x x 0 0 0 0 0
 uint8_t middle_full[] = { 0x1F, 0x00, 0x0E, 0x1F, 0x0E, 0x00, 0x1F, 0x00 };
 
-int pos = 2; // current position of animated blip
+int pos = 0; // current position of animated blip
+int max_pos = LCD_WIDTH-3;
 int dir = 1; // 1 -> blip is moving to the right, -1 -> to the left
 
-void draw_bar()
+void init_animation()
 {
+  lcd.home();
   lcd.print((char)0);   // draw left part of bar
   
   for(int i=0; i<(LCD_WIDTH-2); i++)
@@ -58,25 +60,31 @@ void draw_bar()
   
   lcd.print((char)1);   // draw right part of bar
   
-  lcd.move_to(pos,1);   // return cursor to starting pos
+  lcd.move_to(2,1);     // return cursor to starting pos
+  lcd.print((char)3);   // and draw first char in animation
+  pos = 1;
 }
 
 void animate()
 {
   lcd.shift(SHIFT_CURSOR | (dir == 1? SHIFT_LEFT : SHIFT_RIGHT));
   lcd.print((char)2);
-    
+  
   lcd.print((char)3);
 
-  pos = pos + dir;
-
-  if (pos == LCD_WIDTH-1 && dir == 1) {
+  if (pos == max_pos && dir == 1) {
     dir = -1;
     lcd.entry_mode(ENTRY_CURSOR_DEC);
-  } else if (pos == 2 && dir == -1) {
+    lcd.shift(SHIFT_CURSOR | SHIFT_LEFT);
+    lcd.shift(SHIFT_CURSOR | SHIFT_LEFT);
+  } else if (pos == 0 && dir == -1) {
     dir = 1;
     lcd.entry_mode(ENTRY_CURSOR_INC);
+    lcd.shift(SHIFT_CURSOR | SHIFT_RIGHT);
+    lcd.shift(SHIFT_CURSOR | SHIFT_RIGHT);
   }
+
+  pos = pos + dir;
 }
 
 void setup()
@@ -86,7 +94,6 @@ void setup()
   lcd.set_data_pins(_4PINS(4,5,6,7)); // D4->4, D5->5, D6->6, D7->7
   
   lcd.setup(); // setup arduino and initialize LCD
-  lcd.display(DISPLAY_ON | DISPLAY_NOCURSOR);
   
   // define the custom characters
   lcd.define_char(0, left);
@@ -94,12 +101,11 @@ void setup()
   lcd.define_char(2, middle_empty);
   lcd.define_char(3, middle_full);
   
-  lcd.home();
-  draw_bar();
+  init_animation();
 }
 
 void loop()
 {
+  delay(250);
   animate();
-  delay(200);
 }

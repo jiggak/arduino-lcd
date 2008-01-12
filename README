@@ -45,5 +45,5 @@ D0 -> 4
 ...
 D7 -> 11
 
-The RW pin is NOT used and must be connected to group.
+The RW pin is NOT used and must be connected to ground.
 

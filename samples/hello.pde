@@ -4,8 +4,8 @@
 #include <Lcd.h>
 
 // LCD module is 16 columns wide
-// 8 pin mode is default (see README for default pin numbers)
-Lcd lcd = Lcd(16);
+// 8 pin mode (see README for default pin numbers)
+Lcd lcd = Lcd(16, FUNCTION_8BIT);
 
 char msg[] = "Hello, World!";
 

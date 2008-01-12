@@ -147,9 +147,9 @@ Lcd::setup()
       // parameter and don't delay at all
       send_4bits(0x02);
    } else {
-      send(CMD_FUNCTION, 4100);
-      send(CMD_FUNCTION, 100);
-      send(CMD_FUNCTION, 1000);
+      send(CMD_FUNCTION | FUNCTION_8BIT, 4100);
+      send(CMD_FUNCTION | FUNCTION_8BIT, 100);
+      send(CMD_FUNCTION | FUNCTION_8BIT, 1000);
    }
    
    // set final funtion paramters, can't be set again after this
@@ -165,6 +165,9 @@ Lcd::setup()
    // home and clear must be called in this exact order
    home();
    clear();
+   
+   // finally, leave the setup routine with the display turned on
+   display(DISPLAY_ON);
 }
 
 void

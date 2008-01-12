@@ -39,8 +39,8 @@
    ((((uint32_t)D1)&0xf) << 4)  | (D0&0xf)
 
 // Function constants passed to constructor, can be OR'd together
-#define FUNCTION_4BIT  0x10 // enable 4 pin mode
-#define FUNCTION_8BIT  0x00 // enable 8 pin mode (default)
+#define FUNCTION_8BIT  0x10 // enable 8 pin mode
+#define FUNCTION_4BIT  0x00 // enable 4 pin mode
 #define FUNCTION_2LINE 0x08 // LCD has two lines, line two starts at addr 0x40
 #define FUNCTION_1LINE 0x00 // LCD has one continues line
 #define FUNCTION_5x11  0x04 // use 5x11 custom characters
@@ -89,6 +89,8 @@
  *
  * Default pin arrangement is (4pin mode uses D4~D7):
  * D0=4, D1=5... , D7=11
+ *
+ * Version: 0.1
  */
 class Lcd {
 protected:
@@ -117,7 +119,7 @@ protected:
    void enable();
    
    inline bool is4bit() const
-   { return _function & FUNCTION_4BIT; }
+   { return !(_function & FUNCTION_8BIT); }
    
 public:
    /**
