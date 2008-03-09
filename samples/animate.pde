@@ -90,8 +90,8 @@ void animate()
 void setup()
 {
   // set pin assignment
-  lcd.set_ctrl_pins(_2PINS(2,3));     // RS->2, E->3
-  lcd.set_data_pins(_4PINS(4,5,6,7)); // D4->4, D5->5, D6->6, D7->7
+  lcd.set_ctrl_pins(CTRLPINS(11,10,9)); // RS->11, RS->10, E->9
+  lcd.set_data_pins(_4PINS(4,3,2,1));   // D4->4, D5->5, D6->6, D7->7
   
   lcd.setup(); // setup arduino and initialize LCD
   
@@ -106,6 +106,7 @@ void setup()
 
 void loop()
 {
-  delay(250);
+  delay(175);
   animate();
 }
+

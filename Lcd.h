@@ -23,8 +23,8 @@
 #include <inttypes.h>
 
 /* Generates control pin mask */
-#define _2PINS(RS,E) \
-   ((RS&0xf) << 4) | (E&0xf)
+#define CTRLPINS(RS,RW,E) \
+   ((RS&0xf) << 8) | ((RW&0xf) << 4) | (E&0xf)
 
 /* Generates data pin mask for 4 pin mode */
 #define _4PINS(D4,D5,D6,D7) \
@@ -70,17 +70,17 @@
  * Class for controlling HD44780 based LCD modules from the Arduino.
  *
  * The Arduino has 14 pins.  Therefore we can easily encode a single pin
- * number inside 4bits (0-15).  This class uses a 8 bit mask to encode
- * the control pins (RW, E) and a 32 bit mask to encode the data
+ * number inside 4bits (0-15).  This class uses a 16 bit mask to encode
+ * the control pins (RS,RW,E) and a 32 bit mask to encode the data
  * pins (D0~D8).
  *
  * Control Pins
- * Byte    | B1 | B0 |
- * --------+----+----+
- * LCD Pin | RS |  E |
+ * Byte    | B2 | B1 | B0 |
+ * --------+----+----+----+
+ * LCD Pin | RS | RW |  E |
  *
  * Default pin arrangement is:
- * RS=2, Enable=3
+ * RS=1,RW=2,Enable=3
  *
  * Data Pins
  * Byte    | B7 | B6 | ... | B0 |
@@ -90,33 +90,37 @@
  * Default pin arrangement is (4pin mode uses D4~D7):
  * D0=4, D1=5... , D7=11
  *
- * Version: 0.1
+ * Version: 0.2
  */
 class Lcd {
 protected:
    uint8_t  _cols; // number of columns wide
    uint8_t  _function;
    
-   uint8_t  _ctrl_pins;
+   uint16_t  _ctrl_pins;
    uint32_t _data_pins;
    
    /*
-    * Sends 8bits to the lcd AND waits for the command to finish.
-    *
-    * The most common delay execution time is 42 micro seconds so
-    * the delay is optional and only needed for commands that have
-    * a different execution time.
+    * Sends 8bits to the lcd AND waits for the command to finish
+    * by continuously checking the busy flag.  When the BF pin
+    * (D7) is low, the command is finished.
     */
-   void send(uint8_t data, uint16_t delay_micro = 42);
+   void send(uint8_t data);
    
    /* sends the lower 4bits to the lcd on pins D7~D4 */
    void send_4bits(uint8_t data);
+
+   /* sends all 8bits to the lcd on pins D7~D0 */
+   void send_8bits(uint8_t data);
    
-   /* select instruction register (0) or data register (1) */
+   /* select register (REG_XXXX constant) */
    void select_reg(uint8_t reg);
 
    /* pulses the enable pin to signal the LCD to read data pins */
    void enable();
+
+   /* wait for BF to fall LOW */
+   void check_bf();
    
    inline bool is4bit() const
    { return !(_function & FUNCTION_8BIT); }
@@ -135,9 +139,9 @@ public:
    void setup();
    
    /**
-    * Sets the 8 bit mask for the control pins (RW,E).
+    * Sets the 8 bit mask for the control pins (RS,RW,E).
     */
-   inline void set_ctrl_pins(uint8_t mask)
+   inline void set_ctrl_pins(uint16_t mask)
    { _ctrl_pins = mask; }
 
    /**

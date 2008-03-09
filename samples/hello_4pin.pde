@@ -11,7 +11,7 @@ char msg[] = "Hello, World!";
 void setup()
 {
   // for the sake of demonstration change pin assignment
-  lcd.set_ctrl_pins(_2PINS(2,3));     // RS->2, E->3
+  lcd.set_ctrl_pins(CTRLPINS(1,2,3)); // RS->1, RW->2, E->3
   lcd.set_data_pins(_4PINS(4,5,6,7)); // D4->4, D5->5, D6->6, D7->7
   
   lcd.setup();  // setup arduino and initialize LCD

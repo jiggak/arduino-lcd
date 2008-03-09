@@ -38,43 +38,29 @@ extern "C" {
 #define CMD_CGRAM_ADR  0x40
 #define CMD_DGRAM_ADR  0x80
 
-#define REG_INST 0x00
-#define REG_DATA 0x01
+#define REG_INST 0x00 // write instruction
+#define REG_DATA 0x10 // write data into ram
+#define REG_READ 0x01 // read busy flag/address counter
 
 void
 Lcd::select_reg(uint8_t reg)
 {
-   digitalWrite(PIN(_ctrl_pins, 4), reg);
+   digitalWrite(PIN(_ctrl_pins, 8), (reg&0xf0)>>4);
+   digitalWrite(PIN(_ctrl_pins, 4),  reg&0x0f);
 }
 
 void
-Lcd::send(uint8_t data, uint16_t delay_micros)
+Lcd::send(uint8_t data)
 {
    if (is4bit()) {
       // in 4 pin mode, send upper 4 bits then lower 4 bits
       send_4bits(data >> 4);
       send_4bits(data & 0xf);
    } else {
-      uint32_t pins = _data_pins;
-      
-      for (int i=0; i<8; i++) {
-         digitalWrite(pins & 0xf, data & 1);
-         pins >>= 4;
-         data >>= 1;
-      }
-      
-      enable();
+      send_8bits(data);
    }
-   
-   // wait for command to execute... the spec says to poll the busy
-   // flag and wait for it to go low... but a simple delay seems to
-   // be effective enough in practice
-   delayMicroseconds(delay_micros);
-   
-   // for some crazy reason weird things happen when using a
-   // micro second delay but a single millisecond delay works
-   // UPDATE: now the microsecond delay works again... weird
-   //delay(1);
+
+   check_bf();
 }
 
 void
@@ -93,30 +79,65 @@ Lcd::send_4bits(uint8_t data)
 }
 
 void
+Lcd::send_8bits(uint8_t data)
+{
+   uint32_t pins = _data_pins;
+   
+   for (int i=0; i<8; i++) {
+      digitalWrite(pins & 0xf, data & 1);
+      pins >>= 4;
+      data >>= 1;
+   }
+   
+   enable();
+}
+
+void
 Lcd::enable()
 {
-   digitalWrite(PIN(_ctrl_pins,0), LOW);
-   delayMicroseconds(1);
    digitalWrite(PIN(_ctrl_pins,0), HIGH);
    delayMicroseconds(1);
    digitalWrite(PIN(_ctrl_pins,0), LOW);
+   delayMicroseconds(1);
+}
+
+void
+Lcd::check_bf()
+{
+   // busy flag (D7 pin) is at offset 12 for 4bit and 28 for 8bit
+   uint8_t bf_pin = PIN(_ctrl_pins, is4bit()? 12 : 28);
+
+   pinMode(bf_pin, INPUT); // put D7 into input mode
+   select_reg(REG_READ);   // select register for reading busy flag
+
+   for (int bf=HIGH; bf == HIGH; ) {
+      digitalWrite(PIN(_ctrl_pins,0), HIGH);
+      delayMicroseconds(1);
+
+      bf = digitalRead(bf_pin);
+
+      digitalWrite(PIN(_ctrl_pins,0), LOW);
+      delayMicroseconds(1);
+   }
+
+   pinMode(bf_pin, OUTPUT); // return D7 to output mode
 }
 
 Lcd::Lcd(uint8_t width, uint8_t func) : _cols(width), _function(func)
 {
    // set default pin masks
-   _ctrl_pins = _2PINS(2,3);
+   _ctrl_pins = CTRLPINS(1,2,3);
    _data_pins = _8PINS(4,5,6,7,8,9,10,11);
 }
 
 void
 Lcd::setup()
 {
-   uint8_t cpins = _ctrl_pins;
+   uint16_t cpins = _ctrl_pins;
    uint32_t dpins = _data_pins;
    
    // setup control pins
-   for (int i=0; i<2; i++) {
+   for (int i=0; i<3; i++) {
       pinMode(cpins&0xf, OUTPUT);
       cpins >>=4;
    }
@@ -129,45 +150,42 @@ Lcd::setup()
    
    // spec says wait for the internal reset circuit to finish
    // before trying to do initialization by instruction
-   delay(40);
+   delay(50);
    
-   select_reg(REG_INST);  // all instruction registers
+   select_reg(REG_INST);  // use instruction register
    
    if (is4bit()) {
       send_4bits(0x03);  // function set 8bit wait 5 millis
       delay(5);
 
       send_4bits(0x03);  // function set 8bit wait 100 micros
-      delayMicroseconds(100);
+      delayMicroseconds(150);
 
-      send_4bits(0x03);  // function set 8 bit wait 5 millis
+      send_4bits(0x03);  // final 8bit function set
+
+      send_4bits(0x02);  // first 4bit function command, now bf can be checked
+      check_bf();
+   } else {
+      send_8bits(0x30);
       delay(5);
 
-      // setting 4bit function must happen twice so send 4 bit
-      // parameter and don't delay at all
-      send_4bits(0x02);
-   } else {
-      send(CMD_FUNCTION | FUNCTION_8BIT, 4100);
-      send(CMD_FUNCTION | FUNCTION_8BIT, 100);
-      send(CMD_FUNCTION | FUNCTION_8BIT, 1000);
+      send_8bits(0x30);
+      delayMicroseconds(150);
+
+      send_8bits(0x30);
+      //check_bf();
    }
    
-   // set final funtion paramters, can't be set again after this
+   // send final funtion command, can't be set again after this
+   select_reg(REG_INST);
    send(CMD_FUNCTION | _function);
    
    // remaining three instructions of the initialization routine
+   // hd44780 spec states the second cmd should be display clear
+   // but display on is the only one that works
    display(DISPLAY_OFF);
-   clear();
-   entry_mode(ENTRY_CURSOR_INC | ENTRY_NOSHIFT);
-
-   // the following was not part of the initialization routine in the spec but I found
-   // it is required otherwise some crazy text is printed to the screen... specificly
-   // home and clear must be called in this exact order
-   home();
-   clear();
-   
-   // finally, leave the setup routine with the display turned on
    display(DISPLAY_ON);
+   entry_mode(ENTRY_CURSOR_INC | ENTRY_NOSHIFT);
 }
 
 void
@@ -195,14 +213,14 @@ void
 Lcd::clear()
 {
    select_reg(REG_INST);
-   send(CMD_CLEAR, 1640);
+   send(CMD_CLEAR);
 }
 
 void
 Lcd::home()
 {
    select_reg(REG_INST);
-   send(CMD_HOME, 1640);
+   send(CMD_HOME);
 }
 
 void
@@ -230,7 +248,7 @@ void
 Lcd::print(char c)
 {
    select_reg(REG_DATA);
-   send(c, 46);
+   send(c);
 }
 
 void
@@ -251,6 +269,6 @@ Lcd::define_char(uint8_t index, uint8_t data[])
       send(CMD_CGRAM_ADR | (index*h)+i);
       
       select_reg(REG_DATA);
-      send(data[i], 46);
+      send(data[i]);
    }
 }

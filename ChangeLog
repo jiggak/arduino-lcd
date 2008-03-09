@@ -1,3 +1,13 @@
- January 12/2008
-=================
-- first release version (0.1)
+2008-03-09 Josh Kropf <josh@slashdev.ca>
+
+	* Lcd.h (CTRLPINS): macro for generating controll pin mask
+	* Lcd.cpp (send_8bit): new method for sending commands in 8bit mode
+	(send): removed delay parameter, check BF instead
+	(check_bf): new method for checking busy flag
+	(enable): removed first write of LOW to E pin: E is normally LOW
+	(setup): cleaned up initialization to match hd44780 spec exactly
+
+2008-01-12 Josh Kropf <josh@slashdev.ca>
+
+	* first release version 0.1
+

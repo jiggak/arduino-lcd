@@ -39,11 +39,15 @@ to use this library in the package you downloaded.
 By default the Lcd class will setup the LCD module in 8 pin mode with the
 following pin assignment:
 
-RS -> 2
+RS -> 1
+RW -> 2
 E  -> 3
 D0 -> 4
 ...
 D7 -> 11
 
-The RW pin is NOT used and must be connected to ground.
+As of version 0.2, the RW pin is used in order to check the busy flag of
+the LCD's internal processor.  This eliminates the hard coded waits after
+each command sent to the LCD and should prove to be more portable and
+reliable in the long run.
 
