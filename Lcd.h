@@ -90,22 +90,22 @@
  * Default pin arrangement is (4pin mode uses D4~D7):
  * D0=4, D1=5... , D7=11
  *
- * Version: 0.2
+ * Version: 0.3
  */
 class Lcd {
 protected:
    uint8_t  _cols; // number of columns wide
    uint8_t  _function;
    
-   uint16_t  _ctrl_pins;
+   uint16_t _ctrl_pins;
    uint32_t _data_pins;
    
    /*
-    * Sends 8bits to the lcd AND waits for the command to finish
-    * by continuously checking the busy flag.  When the BF pin
-    * (D7) is low, the command is finished.
+    * Select register and send 8bits to the LCD.  Before the
+    * operation begins, the busy flag is checked and does not
+    * proceed until BF pin (D7) is low.
     */
-   void send(uint8_t data);
+   void send(uint8_t reg, uint8_t data);
    
    /* sends the lower 4bits to the lcd on pins D7~D4 */
    void send_4bits(uint8_t data);
@@ -116,8 +116,11 @@ protected:
    /* select register (REG_XXXX constant) */
    void select_reg(uint8_t reg);
 
-   /* pulses the enable pin to signal the LCD to read data pins */
-   void enable();
+   /* sets the enable pin to HIGH or LOW and adds a short delay */
+   inline void set_enable(uint8_t val);
+   
+   /* toggle the enable pin HIGH then LOW */
+   inline void pulse_enable();
 
    /* wait for BF to fall LOW */
    void check_bf();

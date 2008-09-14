@@ -1,3 +1,13 @@
+2008-09-14 Josh Kropf <josh@slashdev.ca>
+
+	* Lcd.h (send): added register to parameter list
+	  (set_enable, pulse_enable): new functions
+	* Lcd.cpp (send): set register after busy flag check
+	  (send): move busy flag check to start of function
+	  (check_bf): various fixes, but still doesn't work
+	  (setup): added fixed delay in 4bit init instead of busy flag check
+
+
 2008-03-09 Josh Kropf <josh@slashdev.ca>
 
 	* Lcd.h (CTRLPINS): macro for generating controll pin mask

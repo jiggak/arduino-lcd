@@ -50,8 +50,15 @@ Lcd::select_reg(uint8_t reg)
 }
 
 void
-Lcd::send(uint8_t data)
+Lcd::send(uint8_t reg, uint8_t data)
 {
+   // sadly the busy flag checking just doesn't work so a fixed
+   // delay is added here temporarily
+   //check_bf();
+   delay(5);
+   
+   select_reg(reg);
+   
    if (is4bit()) {
       // in 4 pin mode, send upper 4 bits then lower 4 bits
       send_4bits(data >> 4);
@@ -59,8 +66,6 @@ Lcd::send(uint8_t data)
    } else {
       send_8bits(data);
    }
-
-   check_bf();
 }
 
 void
@@ -75,7 +80,7 @@ Lcd::send_4bits(uint8_t data)
       data >>= 1;
    }
    
-   enable();
+   pulse_enable();
 }
 
 void
@@ -89,11 +94,18 @@ Lcd::send_8bits(uint8_t data)
       data >>= 1;
    }
    
-   enable();
+   pulse_enable();
 }
 
 void
-Lcd::enable()
+Lcd::set_enable(uint8_t val)
+{
+   digitalWrite(PIN(_ctrl_pins,0), val);
+   delayMicroseconds(1);
+}
+
+void
+Lcd::pulse_enable()
 {
    digitalWrite(PIN(_ctrl_pins,0), HIGH);
    delayMicroseconds(1);
@@ -105,21 +117,20 @@ void
 Lcd::check_bf()
 {
    // busy flag (D7 pin) is at offset 12 for 4bit and 28 for 8bit
-   uint8_t bf_pin = PIN(_ctrl_pins, is4bit()? 12 : 28);
+   uint8_t bf_pin = PIN(_data_pins, is4bit()? 12 : 28);
 
    pinMode(bf_pin, INPUT); // put D7 into input mode
    select_reg(REG_READ);   // select register for reading busy flag
 
-   for (int bf=HIGH; bf == HIGH; ) {
-      digitalWrite(PIN(_ctrl_pins,0), HIGH);
-      delayMicroseconds(1);
-
+   uint8_t bf;
+   do {
+      set_enable(HIGH);
+      
       bf = digitalRead(bf_pin);
-
-      digitalWrite(PIN(_ctrl_pins,0), LOW);
-      delayMicroseconds(1);
-   }
-
+      
+      set_enable(LOW);
+   } while (bf);
+   
    pinMode(bf_pin, OUTPUT); // return D7 to output mode
 }
 
@@ -161,10 +172,10 @@ Lcd::setup()
       send_4bits(0x03);  // function set 8bit wait 100 micros
       delayMicroseconds(150);
 
-      send_4bits(0x03);  // final 8bit function set
-
+      send_4bits(0x03);  // final 8bit function set wait 100 micros
+      delayMicroseconds(150);
+      
       send_4bits(0x02);  // first 4bit function command, now bf can be checked
-      check_bf();
    } else {
       send_8bits(0x30);
       delay(5);
@@ -173,12 +184,10 @@ Lcd::setup()
       delayMicroseconds(150);
 
       send_8bits(0x30);
-      //check_bf();
    }
    
    // send final funtion command, can't be set again after this
-   select_reg(REG_INST);
-   send(CMD_FUNCTION | _function);
+   send(REG_INST, CMD_FUNCTION | _function);
    
    // remaining three instructions of the initialization routine
    // hd44780 spec states the second cmd should be display clear
@@ -191,64 +200,56 @@ Lcd::setup()
 void
 Lcd::entry_mode(uint8_t entry)
 {
-   select_reg(REG_INST);
-   send(CMD_ENTRY_MODE | entry);
+   send(REG_INST, CMD_ENTRY_MODE | entry);
 }
 
 void
 Lcd::display(uint8_t display)
 {
-   select_reg(REG_INST);
-   send(CMD_DISPLAY | display);
+   send(REG_INST, CMD_DISPLAY | display);
 }
 
 void
 Lcd::shift(uint8_t shift)
 {
-   select_reg(REG_INST);
-   send(CMD_SHIFT | shift);
+   send(REG_INST, CMD_SHIFT | shift);
 }
 
 void
 Lcd::clear()
 {
-   select_reg(REG_INST);
-   send(CMD_CLEAR);
+   send(REG_INST, CMD_CLEAR);
 }
 
 void
 Lcd::home()
 {
-   select_reg(REG_INST);
-   send(CMD_HOME);
+   send(REG_INST, CMD_HOME);
 }
 
 void
 Lcd::move_to(int col, int row)
 {
-   select_reg(REG_INST);
-   
    if (_function & FUNCTION_2LINE) {
       switch(row) {
          case 1:
-            send(CMD_DGRAM_ADR | col-1); break;
+            send(REG_INST, CMD_DGRAM_ADR | col-1); break;
          case 3:
-            send(CMD_DGRAM_ADR | _cols+col-1); break;
+            send(REG_INST, CMD_DGRAM_ADR | _cols+col-1); break;
          case 2:
-            send(CMD_DGRAM_ADR | 0x40+col-1); break;
+            send(REG_INST, CMD_DGRAM_ADR | 0x40+col-1); break;
          case 4:
-            send(CMD_DGRAM_ADR | 0x40+_cols+col-1 ); break;
+            send(REG_INST, CMD_DGRAM_ADR | 0x40+_cols+col-1 ); break;
       }
    } else {
-      send(CMD_DGRAM_ADR | ((row-1)*_cols)+col-1);
+      send(REG_INST, CMD_DGRAM_ADR | ((row-1)*_cols)+col-1);
    }
 }
 
 void
 Lcd::print(char c)
 {
-   select_reg(REG_DATA);
-   send(c);
+   send(REG_DATA, c);
 }
 
 void
@@ -265,10 +266,7 @@ Lcd::define_char(uint8_t index, uint8_t data[])
 {
    int h = _function & FUNCTION_5x11? 11 : 8;
    for (int i=0; i<h; i++) {
-      select_reg(REG_INST);
-      send(CMD_CGRAM_ADR | (index*h)+i);
-      
-      select_reg(REG_DATA);
-      send(data[i]);
+      send(REG_INST, CMD_CGRAM_ADR | (index*h)+i);
+      send(REG_DATA, data[i]);
    }
 }
