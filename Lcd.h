@@ -33,10 +33,10 @@
 
 /* Generates data pin mask for 8 pin mode */
 #define _8PINS(D0,D1,D2,D3,D4,D5,D6,D7) \
-   ((((uint32_t)D7)&0xf) << 28) | ((((uint32_t)D6)&0xf) << 24) | \
-   ((((uint32_t)D5)&0xf) << 20) | ((((uint32_t)D4)&0xf) << 16) | \
-   ((((uint32_t)D3)&0xf) << 12) | ((((uint32_t)D2)&0xf) << 8) | \
-   ((((uint32_t)D1)&0xf) << 4)  | (D0&0xf)
+   (uint32_t)((((uint32_t)D7)&0xf) << 28) | (uint32_t)((((uint32_t)D6)&0xf) << 24) | \
+   (uint32_t)((((uint32_t)D5)&0xf) << 20) | (uint32_t)((((uint32_t)D4)&0xf) << 16) | \
+   (uint32_t)((((uint32_t)D3)&0xf) << 12) | (uint32_t)((((uint32_t)D2)&0xf) << 8) | \
+   (uint32_t)((((uint32_t)D1)&0xf) << 4)  | (uint32_t)(D0&0xf)
 
 // Function constants passed to constructor, can be OR'd together
 #define FUNCTION_8BIT  0x10 // enable 8 pin mode
@@ -75,7 +75,7 @@
  * pins (D0~D8).
  *
  * Control Pins
- * Byte    | B2 | B1 | B0 |
+ * Nibble  | N2 | N1 | N0 |
  * --------+----+----+----+
  * LCD Pin | RS | RW |  E |
  *
@@ -83,7 +83,7 @@
  * RS=1,RW=2,Enable=3
  *
  * Data Pins
- * Byte    | B7 | B6 | ... | B0 |
+ * Nibble  | N7 | N6 | ... | N0 |
  * --------+----+----+-----+----+
  * LCD Pin | D0 | D1 | ... | D7 |
  *
@@ -94,6 +94,8 @@
  */
 class Lcd {
 protected:
+   bool _is4bit;   // flag indicating 4bit mode is enabled
+   
    uint8_t  _cols; // number of columns wide
    uint8_t  _function;
    
@@ -124,9 +126,6 @@ protected:
 
    /* wait for BF to fall LOW */
    void check_bf();
-   
-   inline bool is4bit() const
-   { return !(_function & FUNCTION_8BIT); }
    
 public:
    /**

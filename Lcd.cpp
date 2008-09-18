@@ -52,14 +52,14 @@ Lcd::select_reg(uint8_t reg)
 void
 Lcd::send(uint8_t reg, uint8_t data)
 {
-   // sadly the busy flag checking just doesn't work so a fixed
-   // delay is added here temporarily
-   //check_bf();
-   delay(5);
+   // when RW bin is not connected, comment out busy flag check
+   // and use fixed delay (might need to adjust delay length)
+   // delay(5);
+   check_bf();
    
    select_reg(reg);
    
-   if (is4bit()) {
+   if (_is4bit) {
       // in 4 pin mode, send upper 4 bits then lower 4 bits
       send_4bits(data >> 4);
       send_4bits(data & 0xf);
@@ -117,18 +117,23 @@ void
 Lcd::check_bf()
 {
    // busy flag (D7 pin) is at offset 12 for 4bit and 28 for 8bit
-   uint8_t bf_pin = PIN(_data_pins, is4bit()? 12 : 28);
-
+   uint8_t bf_pin = PIN(_data_pins, (_is4bit? 12 : 28));
+   
    pinMode(bf_pin, INPUT); // put D7 into input mode
    select_reg(REG_READ);   // select register for reading busy flag
 
    uint8_t bf;
    do {
       set_enable(HIGH);
-      
       bf = digitalRead(bf_pin);
-      
       set_enable(LOW);
+      
+      // this operation has two steps in 4bit bus mode
+      // 1) get the busy flag bit and 3 bits of address counter
+      // 2) remaining 4 bits of address counter
+      // so do one more pulse of the enable pin to finish the op
+      if (_is4bit)
+         pulse_enable();
    } while (bf);
    
    pinMode(bf_pin, OUTPUT); // return D7 to output mode
@@ -136,6 +141,8 @@ Lcd::check_bf()
 
 Lcd::Lcd(uint8_t width, uint8_t func) : _cols(width), _function(func)
 {
+   _is4bit = !(_function & FUNCTION_8BIT);
+   
    // set default pin masks
    _ctrl_pins = CTRLPINS(1,2,3);
    _data_pins = _8PINS(4,5,6,7,8,9,10,11);
@@ -154,7 +161,7 @@ Lcd::setup()
    }
    
    // setup data pins
-   for (int i=0; i<(is4bit()? 4 : 8); i++) {
+   for (int i=0; i<(_is4bit? 4 : 8); i++) {
       pinMode(dpins&0xf, OUTPUT);
       dpins >>=4;
    }
@@ -165,7 +172,7 @@ Lcd::setup()
    
    select_reg(REG_INST);  // use instruction register
    
-   if (is4bit()) {
+   if (_is4bit) {
       send_4bits(0x03);  // function set 8bit wait 5 millis
       delay(5);
 
