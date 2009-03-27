@@ -269,6 +269,40 @@ Lcd::print(char* s)
 }
 
 void
+Lcd::print(unsigned long n, uint8_t base)
+{
+   char buf[8 * sizeof(long)];
+   int i = 0;
+
+   if (n == 0) {
+      print('0');
+      return;
+   }
+
+   while (n > 0) {
+      buf[i++] = n % base;
+      n /= base;
+   }
+
+   for(; i > 0; i--) {
+      print((char) (buf[i - 1] < 10?
+               '0' + buf[i - 1] :
+               'A' + buf[i - 1] - 10));
+   }
+}
+
+void
+Lcd::print(long n, uint8_t base)
+{
+   if (n < 0) {
+      print('-');
+      n = -n;
+   }
+
+   print((unsigned long)n);
+}
+
+void
 Lcd::define_char(uint8_t index, uint8_t data[])
 {
    int h = _function & FUNCTION_5x11? 11 : 8;

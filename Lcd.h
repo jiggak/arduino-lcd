@@ -90,7 +90,7 @@
  * Default pin arrangement is (4pin mode uses D4~D7):
  * D0=4, D1=5... , D7=11
  *
- * Version: 0.3
+ * Version: 0.4
  */
 class Lcd {
 protected:
@@ -196,7 +196,37 @@ public:
     * current cursor position.
     */
    void print(char* str);
-   
+
+   /**
+    * Print a number to the LCD screen at the current cursor position.
+    * \param n unsigned long integer
+    * \param base number system, default is decimal (base ten)
+    */
+   void print(unsigned long n, uint8_t base = 10);
+
+   /**
+    * Print a number to the LCD screen at the current cursor position.
+    * \param n signed long integer
+    * \param base number system, default is decimal (base ten)
+    */
+   void print(long n, uint8_t base = 10);
+
+   /**
+    * Print a number to the LCD screen at the current cursor position.
+    * \param n unsigned integer
+    * \param base number system, default is decimal (base ten)
+    */
+   void print(unsigned int n, uint8_t base = 10)
+   { print((unsigned long)n, base); }
+
+   /**
+    * Print a number to the LCD screen at the current cursor position.
+    * \param n signed integer
+    * \param base number system, default is decimal (base ten)
+    */
+   void print(int n, uint8_t base = 10)
+   { print((long)n, base); }
+
    /**
     * Define character in CGRAM.  This defines a custom character.  When the
     * LCD is setup to use 5x8 font the user can specify up to eight characters.

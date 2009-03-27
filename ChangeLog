@@ -1,9 +1,15 @@
+2009-03-27 Josh Kropf <josh@slashdev.ca>
+
+	* Lcd.h, Lcd.cpp
+	  (print): added method overrides for printing numbers
+
+
 2008-09-17 Josh Kropf <josh@slashdev.ca>
 
 	* Lcd.h: use protected member to store 4bit flag instead of line function
 	* Lcd.cpp: use flag to check if 4bit mode is enabled
 	  (check_bf): fixed bug resulting in wrong pin selected for BF check
-	  (check_bf); do second enable pin pulse in 4bit mode
+	  (check_bf): do second enable pin pulse in 4bit mode
 
 
 2008-09-14 Josh Kropf <josh@slashdev.ca>
